@@ -1,0 +1,106 @@
+#!/bin/bash
+
+AWS_REGION=ap-northeast-1
+
+usage(){
+    echo "Usage: $(dirname $0) src-path s3-bucket"
+}
+gziping() {
+  echo "Gzipping ..."
+  if [ -e $SRC.gz ]
+  then
+    rm $SRC.gz
+  fi
+  gzip -9 $SRC; rename 's/\.gz//' $SRC.gz;
+}
+# Check for src dir
+if [[ -z "$1" ]]
+then
+    usage
+    echo "src not specified"
+    exit 1;
+fi
+SRC=$1
+
+if [[ -z "$2" ]]
+then
+    usage
+    echo "s3-bucket not specified"
+    exit 1;
+fi
+S3_BUCKET=$2
+
+# check for AWS client
+AWS=$(which aws)
+if [[ -z $AWS ]]
+then
+  echo -e "${RED}AWS cli not installed. "
+  exit 1
+fi
+
+CSS_COMPRESSION=1
+JS_COMPRESSION=1
+HTML_COMPRESSION=1
+JAVA=$(which java)
+RED='\e[0;31m'
+NOCOLOR='\e[0m'
+COMPRESSOR_LIBS=$(dirname $(realpath $0))/lib
+TMPDIR=$(mktemp -d --suffix s3)
+
+if [[ -z $JAVA ]]
+then
+  echo -e "${RED}Java not installed.  All compressors disabled${NOCOLOR}"
+  CSS_COMPRESSION=0
+  JS_COMPRESSION=0
+  HTML_COMPRESSION=0
+fi
+echo $SRC
+
+echo "Copying $SRC to $TMPDIR"
+cp $SRC $TMPDIR
+# AWS CLI doesn't seem to honor include/exclude with absolute paths so
+# change to the temp dir.
+pushd $TMPDIR
+
+echo 'check file type'
+ext=${SRC##*\.}
+case $ext in
+  js)
+    echo 'file is js'
+    if [[ $JS_COMPRESSION -eq 1 ]]
+    then
+      java -jar $COMPRESSOR_LIBS/yuicompressor-2.4.8.jar --type js -o $SRC $SRC;
+    fi
+    gziping
+    $AWS s3 --region $AWS_REGION cp --acl public-read --cache-control="public, max-age=3600" --expires "$(date -u -d '5 years' "+%a, %d %b %Y %T %Z")" --content-type "application/javascript" --content-encoding="gzip" ${SRC} s3://$S3_BUCKET/
+    exit 1
+    ;;
+  css)
+    echo 'file is css'
+    if [[ $CSS_COMPRESSION -eq 1 ]]
+    then
+      java -jar $COMPRESSOR_LIBS/yuicompressor-2.4.8.jar --type css -o $SRC $SRC;
+    fi
+    gziping
+    $AWS s3 --region $AWS_REGION cp --acl public-read --content-type "text/css" --cache-control="public, max-age=3600" --expires "$(date -u -d '5 years' "+%a, %d %b %Y %T %Z")"  --content-encoding="gzip" ${SRC} s3://$S3_BUCKET/
+    exit 1
+    ;;
+  htm|html)
+    echo 'file is html'
+    if [[ $HTML_COMPRESSION -eq 1 ]]
+    then
+      java -jar $COMPRESSOR_LIBS/htmlcompressor-1.5.3.jar --type html --compress-js --compress-css -o $SRC $SRC;
+    fi
+    gziping
+    $AWS s3 --region $AWS_REGION cp --acl public-read --content-encoding "gzip" --cache-control "max-age=3600, must-revalidate" ${SRC} s3://$S3_BUCKET/
+    exit 1
+    ;;
+  *)
+    echo 'other image'
+    $AWS --region $AWS_REGION s3 cp --acl public-read --expires "$(date -u -d '5 years' "+%a, %d %b %Y %T %Z")" --cache-control="public, max-age=3600" ${SRC} s3://$S3_BUCKET/
+    exit 1
+esac
+
+# Cleanup
+rm -rf $TMPDIR
+popd
