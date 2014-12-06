@@ -24,5 +24,5 @@ s3upload
 # 使用方式
 
 1. s3upload-file _filename bucket/folder
-2. s3upload-file _folder bucket/folder
+2. s3upload-folder _folder bucket/folder
 3. Defaults to ap-northeast-1 region.
