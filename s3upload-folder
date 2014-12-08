@@ -1,6 +1,6 @@
 #!/bin/bash
 
-AWS_REGION=ap-northeast-1
+AWS_REGION=us-east-1
 usage(){
     echo "Usage: $(dirname $0) src-path s3-bucket"
 }
@@ -92,9 +92,9 @@ for f in $(find . -name '*.woff' -o -name '*.eot' -o -name '*.ttf' -o -name '*.s
   gzip -9 $f; rename 's/\.gz//' $f.gz;
 done;
 
-$AWS s3 --region $AWS_REGION sync --acl public-read --exclude '*.*' --include '*.js' --include '*.min' --cache-control="public, max-age=7200" --expires "$(date -u -d '5 years' "+%a, %d %b %Y %T %Z")" --content-type "application/javascript" --content-encoding="gzip" . s3://$S3_BUCKET/
-$AWS s3 --region $AWS_REGION sync --acl public-read --exclude '*.*' --include '*.css' --include "*.min" --content-type "text/css" --cache-control="public, max-age=7200" --expires "$(date -u -d '5 years' "+%a, %d %b %Y %T %Z")"  --content-encoding="gzip" . s3://$S3_BUCKET/
-$AWS s3 --region $AWS_REGION sync --acl public-read --exclude '*.*' --include '*.woff' --include "*.eot" --include "*.svg" --include "*.ttf" --cache-control="public, max-age=7200" --expires "$(date -u -d '5 years' "+%a, %d %b %Y %T %Z")"  --content-encoding="gzip" . s3://$S3_BUCKET/
+$AWS s3 --region $AWS_REGION sync --acl public-read --exclude '*.*' --include '*.js' --include '*.min' --cache-control="public, max-age=3600" --expires "$(date -u -d '5 years' "+%a, %d %b %Y %T %Z")" --content-type "application/javascript" --content-encoding="gzip" . s3://$S3_BUCKET/
+$AWS s3 --region $AWS_REGION sync --acl public-read --exclude '*.*' --include '*.css' --include "*.min" --content-type "text/css" --cache-control="public, max-age=3600" --expires "$(date -u -d '5 years' "+%a, %d %b %Y %T %Z")"  --content-encoding="gzip" . s3://$S3_BUCKET/
+$AWS s3 --region $AWS_REGION sync --acl public-read --exclude '*.*' --include '*.woff' --include "*.eot" --include "*.svg" --include "*.ttf" --cache-control="public, max-age=3600" --expires "$(date -u -d '5 years' "+%a, %d %b %Y %T %Z")"  --content-encoding="gzip" . s3://$S3_BUCKET/
 
 
 echo "Syncing media files..."
@@ -114,7 +114,7 @@ for f in $(find . -name '*.html' -o -name '*.htm'); do
   fi
   gzip -9 $f; rename 's/\.gz//' $f.gz;
 done;
-$AWS s3 --region $AWS_REGION sync --acl public-read --exclude '*.*' --include '*.html' --include '*.htm' --content-encoding "gzip" --cache-control "max-age=7200, must-revalidate" . s3://$S3_BUCKET/
+$AWS s3 --region $AWS_REGION sync --acl public-read --exclude '*.*' --include '*.html' --include '*.htm' --content-encoding "gzip" --cache-control "max-age=3600, must-revalidate" . s3://$S3_BUCKET/
 
 # Sync everything else, but ignore the assets!
 echo "Syncing everything else"
