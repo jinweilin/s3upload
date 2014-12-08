@@ -7,11 +7,11 @@ usage(){
 }
 gziping() {
   echo "Gzipping ..."
-  if [ -e $TMPDIR\$SRCNAME.gz ]
+  if [ -e $TMPDIR/$SRCNAME.gz ]
   then
-    rm $TMPDIR\$SRCNAME.gz
+    rm $TMPDIR/$SRCNAME.gz
   fi
-  gzip -9 $TMPDIR\$SRCNAME; rename 's/\.gz//' $TMPDIR\$SRCNAME.gz;
+  gzip -9 $TMPDIR/$SRCNAME; rename 's/\.gz//' $TMPDIR/$SRCNAME.gz;
 }
 # Check for src dir
 if [[ -z "$1" ]]
