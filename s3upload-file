@@ -13,6 +13,12 @@ gziping() {
   fi
   gzip -9 $TMPDIR/$SRCNAME; rename 's/\.gz//' $TMPDIR/$SRCNAME.gz;
 }
+delTmp() {
+  # Cleanup
+  echo "delete ${TMPDIR} ..."
+  rm -rf $TMPDIR
+  popd
+}
 # Check for src dir
 if [[ -z "$1" ]]
 then
@@ -102,6 +108,3 @@ case $ext in
     exit 1
 esac
 
-# Cleanup
-rm -rf $TMPDIR
-popd
